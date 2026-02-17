@@ -67,6 +67,12 @@ export const useMessageList = () => {
         queryClient.invalidateQueries([QUERY_KEY.USERS, user._id]);
         break;
       }
+      case ISocketEvent.CHAT_DELETED: {
+        const data = dataEvent as { userId: string; otherUserId: string };
+        const otherId = data.userId === user._id ? data.otherUserId : data.userId;
+        queryClient.invalidateQueries([QUERY_KEY.CHAT, user._id, otherId]);
+        break;
+      }
       default:
         break;
     }

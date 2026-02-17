@@ -96,6 +96,16 @@ export const sendMessage = async (message: IMessage): Promise<void> => {
 };
 
 /**
+ * Notify both participants that the conversation was deleted (messages cleared).
+ * @param userId - First user id
+ * @param otherUserId - Second user id
+ */
+export const chatDeleted = (userId: string, otherUserId: string): void => {
+  const event = { type: ISocketEvent.CHAT_DELETED, data: { userId, otherUserId } };
+  sendToClient(event, [userId, otherUserId]);
+};
+
+/**
  * This function is used to send events to concerned users
  * @param {{ type: ISocketEvent; data: unknown }} evt - Event type and associated datas
  * @param {string[] | "ALL"} target - To know who we should notify

@@ -4,4 +4,5 @@ export enum ISocketEvent {
   USER_UDPATE = "user_update",
   USER_DELETE = "user_delete",
   SEND_MESSAGE = "send_message",
+  CHAT_DELETED = "chat_deleted",
 }
