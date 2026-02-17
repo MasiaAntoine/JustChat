@@ -6,6 +6,7 @@ import { ISocketEvent } from "../../apis/ISocketEvent";
 import { QUERY_KEY } from "../../hooks/useQueryCache/queryKey";
 import { useChatCache } from "../../hooks/useQueryCache/useChatCache";
 import { ChatPageResponse } from "../../apis/actions/ChatAction";
+import { uploadImage } from "../../apis/actions/UploadImageAction";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { reducer, initialState, IAction } from "./InputMessage.reducer";
 
@@ -22,6 +23,7 @@ export const useInputMessage = () => {
 
   // Ref
   const messageRef = useRef<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     window.addEventListener("keypress", submitWithKeypress);
@@ -65,28 +67,86 @@ export const useInputMessage = () => {
    * @param {{message: string}} formData - Input values from useForm
    * @returns {void}
    */
+  const addMessageToCache = useCallback(
+    (message: { conversationId?: string; content: string; date: Date; receiver: string; sender: string; image?: string }) => {
+      const key = [QUERY_KEY.CHAT, userId, params.id];
+      queryClient.setQueryData(key, (old: { pages: ChatPageResponse[]; pageParams: unknown[] } | undefined) => {
+        if (!old?.pages?.length) return old;
+        const pages = [...old.pages];
+        pages[0] = {
+          ...pages[0],
+          chat: { ...pages[0].chat, messages: [...pages[0].chat.messages, message] },
+        };
+        return { ...old, pages };
+      });
+      emitEvent(ISocketEvent.SEND_MESSAGE, message);
+    },
+    [queryClient, userId, params.id, emitEvent]
+  );
+
   const handleSubmit = (): void => {
-    const message = {
+    if (!state.message.trim() && !state.pendingImages.length) return;
+
+    const base = {
       conversationId: queryChat.data._id,
-      content: state.message,
-      date: new Date(),
       receiver: params.id,
       sender: userId,
+      date: new Date(),
     };
-    const key = [QUERY_KEY.CHAT, userId, params.id];
-    queryClient.setQueryData(key, (old: { pages: ChatPageResponse[]; pageParams: unknown[] } | undefined) => {
-      if (!old?.pages?.length) return old;
-      const pages = [...old.pages];
-      pages[0] = {
-        ...pages[0],
-        chat: { ...pages[0].chat, messages: [...pages[0].chat.messages, message] },
-      };
-      return { ...old, pages };
+
+    if (state.message.trim()) {
+      addMessageToCache({ ...base, content: state.message.trim() });
+    }
+    state.pendingImages.forEach((image) => {
+      addMessageToCache({ ...base, content: "", image });
     });
-    emitEvent(ISocketEvent.SEND_MESSAGE, message);
+
     scrollToBottom();
-    dispatch({ type: IAction.SET_MESSAGE, payload: { ...state, message: "" } });
+    dispatch({ type: IAction.SET_MESSAGE, payload: { ...state, message: "", pendingImages: [] } });
   };
 
-  return { ...state, handleSubmit, setEmoji, handleInput };
+  const handlePhotoClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files?.length) return;
+      const imageFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
+      if (!imageFiles.length) return;
+      try {
+        const dataUrls = await Promise.all(imageFiles.map((file) => uploadImage(file)));
+        dispatch({
+          type: IAction.SET_PENDING_IMAGES,
+          payload: { pendingImages: [...state.pendingImages, ...dataUrls] },
+        });
+      } catch (err) {
+        console.error(err);
+      }
+      e.target.value = "";
+    },
+    [state.pendingImages]
+  );
+
+  const handleRemovePendingImage = useCallback(
+    (index: number) => {
+      dispatch({
+        type: IAction.SET_PENDING_IMAGES,
+        payload: { pendingImages: state.pendingImages.filter((_, i) => i !== index) },
+      });
+    },
+    [state.pendingImages]
+  );
+
+  return {
+    ...state,
+    handleSubmit,
+    setEmoji,
+    handleInput,
+    handlePhotoClick,
+    handleFileChange,
+    handleRemovePendingImage,
+    fileInputRef,
+  };
 };

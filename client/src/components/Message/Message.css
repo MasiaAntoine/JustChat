@@ -76,6 +76,22 @@
   color: var(--secondary-color);
 }
 
+.message-image-link {
+  display: block;
+  margin-bottom: 0.25rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.message-image {
+  display: block;
+  max-width: 280px;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
 .message-content {
   font-size: 0.9rem;
   font-weight: 400;

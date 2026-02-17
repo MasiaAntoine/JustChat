@@ -4,4 +4,5 @@ export type IMessage = {
   receiver: string;
   content: string;
   date: Date;
+  image?: string;
 };

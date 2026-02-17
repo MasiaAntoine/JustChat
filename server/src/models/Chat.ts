@@ -6,22 +6,11 @@ const ChatSchema = new mongoose.Schema(
     createdAt: { type: Date, required: true },
     messages: [
       {
-        sender: {
-          type: String,
-          required: false,
-        },
-        receiver: {
-          type: String,
-          required: false,
-        },
-        content: {
-          type: String,
-          required: false,
-        },
-        date: {
-          type: Date,
-          required: false,
-        },
+        sender: { type: String, required: false },
+        receiver: { type: String, required: false },
+        content: { type: String, required: false },
+        date: { type: Date, required: false },
+        image: { type: String, required: false },
       },
     ],
   },

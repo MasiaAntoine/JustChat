@@ -35,7 +35,12 @@ const Message = memo(
               <span>{formatDate(props.date)}</span>
             </div>
           )}
-          <p className="message-content">{props.content}</p>
+          {props.image && (
+            <a href={props.image} target="_blank" rel="noopener noreferrer" className="message-image-link">
+              <img src={props.image} alt="Photo partagée" className="message-image" />
+            </a>
+          )}
+          {props.content ? <p className="message-content">{props.content}</p> : null}
         </div>
       </div>
     );

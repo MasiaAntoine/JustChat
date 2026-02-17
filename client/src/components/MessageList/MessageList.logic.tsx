@@ -15,6 +15,10 @@ import { useContactCache } from "../../hooks/useQueryCache/useContactCache";
 import { ChatPageResponse } from "../../apis/actions/ChatAction";
 import { IUser } from "../../apis/IUser";
 
+export type MessageBlock =
+  | { type: "single"; message: IMessage; index: number }
+  | { type: "imageGroup"; messages: IMessage[]; startIndex: number };
+
 const SCROLL_LOAD_MORE_THRESHOLD = 80;
 
 export const useMessageList = () => {
@@ -141,11 +145,40 @@ export const useMessageList = () => {
     return () => el.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
+  /**
+   * Regroupe les messages photo consécutifs du même expéditeur pour affichage en grille (3 par ligne).
+   */
+  const getMessageBlocks = useCallback((): MessageBlock[] => {
+    const messages = queryChat.data.messages || [];
+    const blocks: MessageBlock[] = [];
+    const imageOnly = (m: IMessage) => !!(m.image && !(m.content || "").trim());
+
+    let i = 0;
+    while (i < messages.length) {
+      const msg = messages[i];
+      if (imageOnly(msg)) {
+        let j = i;
+        while (j < messages.length && messages[j].sender === msg.sender && imageOnly(messages[j])) {
+          j++;
+        }
+        if (j > i) {
+          blocks.push({ type: "imageGroup", messages: messages.slice(i, j), startIndex: i });
+          i = j;
+          continue;
+        }
+      }
+      blocks.push({ type: "single", message: msg, index: i });
+      i++;
+    }
+    return blocks;
+  }, [queryChat.data.messages]);
+
   return {
     chat: queryChat.data,
     queryChat,
     isSameSender,
     getInfos,
+    getMessageBlocks,
     chatContainerRef,
     currentUserId: user._id,
   };

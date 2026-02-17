@@ -1,0 +1,22 @@
+.message-image-group .message-image-group-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+  max-width: min(100%, 320px);
+}
+
+.message-image-group .message-image-group-item {
+  display: block;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  aspect-ratio: 1;
+  min-width: 0;
+}
+
+.message-image-group .message-image-group-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  display: block;
+}
