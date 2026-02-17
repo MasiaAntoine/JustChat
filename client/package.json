@@ -25,7 +25,8 @@
     "react-query": "^3.39.3",
     "react-redux": "^8.1.2",
     "react-router-dom": "^6.16.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "yet-another-react-lightbox": "^3.29.1"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.3",

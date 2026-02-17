@@ -1,8 +1,9 @@
 import { IMessage } from "../../apis/IMessage";
-import { memo } from "react";
+import { memo, useState } from "react";
 import "./Message.css";
 import { IUserDTO } from "../../apis/IUserDTO";
 import { formatDate } from "../../utils/formatDate";
+import ImageLightbox from "../ImageLightbox/ImageLightbox";
 
 const Message = memo(
   (
@@ -12,6 +13,8 @@ const Message = memo(
       isMe: boolean;
     }
   ) => {
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+
     return (
       <div
         className="message-container"
@@ -36,9 +39,21 @@ const Message = memo(
             </div>
           )}
           {props.image && (
-            <a href={props.image} target="_blank" rel="noopener noreferrer" className="message-image-link">
-              <img src={props.image} alt="Photo partagée" className="message-image" />
-            </a>
+            <>
+              <button
+                type="button"
+                className="message-image-link"
+                onClick={() => setLightboxOpen(true)}
+                aria-label="Agrandir la photo"
+              >
+                <img src={props.image} alt="Photo partagée" className="message-image" />
+              </button>
+              <ImageLightbox
+                open={lightboxOpen}
+                onClose={() => setLightboxOpen(false)}
+                slides={[{ src: props.image }]}
+              />
+            </>
           )}
           {props.content ? <p className="message-content">{props.content}</p> : null}
         </div>

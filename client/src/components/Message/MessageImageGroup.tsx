@@ -1,7 +1,8 @@
 import { IMessage } from "../../apis/IMessage";
-import { memo } from "react";
+import { memo, useState } from "react";
 import { IUserDTO } from "../../apis/IUserDTO";
 import { formatDate } from "../../utils/formatDate";
+import ImageLightbox from "../ImageLightbox/ImageLightbox";
 import "./MessageImageGroup.css";
 
 type Props = {
@@ -13,6 +14,16 @@ type Props = {
 
 const MessageImageGroup = memo(({ messages, isSameSender, infoToDisplay, isMe }: Props) => {
   const first = messages[0];
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const slides = messages.map((msg) => ({ src: msg.image! }));
+
   return (
     <div
       className="message-container message-image-group"
@@ -38,18 +49,24 @@ const MessageImageGroup = memo(({ messages, isSameSender, infoToDisplay, isMe }:
         )}
         <div className="message-image-group-grid">
           {messages.map((msg, i) => (
-            <a
+            <button
               key={i}
-              href={msg.image}
-              target="_blank"
-              rel="noopener noreferrer"
+              type="button"
               className="message-image-group-item"
+              onClick={() => openLightbox(i)}
+              aria-label="Agrandir la photo"
             >
               <img src={msg.image} alt="Photo partagée" />
-            </a>
+            </button>
           ))}
         </div>
       </div>
+      <ImageLightbox
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        slides={slides}
+        index={lightboxIndex}
+      />
     </div>
   );
 });
