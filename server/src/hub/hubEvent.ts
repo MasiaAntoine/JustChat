@@ -4,6 +4,7 @@ import { IMessage } from "../types/IMessage.js";
 import { ISocketEvent } from "../types/ISocketEvent.js";
 import { IUser } from "../types/IUser.js";
 import WebSocket from "ws";
+import { encryptMessage } from "../utils/encryption.js";
 
 let clients: { userId: string; client: WebSocket }[] = [];
 
@@ -89,7 +90,13 @@ export const sendMessage = async (message: IMessage): Promise<void> => {
   const chat = await Chat.findOne({ _id: message.conversationId });
   if (!chat) return;
   delete message["conversationId"];
-  chat.messages.push(message);
+  const { content, image } = encryptMessage({ content: message.content, image: message.image });
+  const messageToStore: IMessage = {
+    ...message,
+    content,
+    ...(image !== undefined && { image }),
+  };
+  chat.messages.push(messageToStore);
   chat.save();
   const event = { type: ISocketEvent.SEND_MESSAGE, data: message };
   sendToClient(event, [message.receiver]);

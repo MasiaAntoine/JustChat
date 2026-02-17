@@ -7,6 +7,7 @@ import { AppError } from "../utils/AppError.js";
 import { IErrorCode } from "../types/IErrorCode.js";
 import { IStatusCode } from "../types/IStatusCode.js";
 import { chatDeleted } from "../hub/hubEvent.js";
+import { decryptMessage } from "../utils/encryption.js";
 
 const MESSAGES_PAGE_SIZE = 10;
 
@@ -43,7 +44,8 @@ export const getChatController = async (
       slice = sorted.slice(-limit);
       hasMore = sorted.length > limit;
     }
-    chat = { _id: chatDoc._id.toString(), createdAt: chatDoc.createdAt, messages: slice };
+    const messagesDecrypted = slice.map((m) => decryptMessage(m));
+    chat = { _id: chatDoc._id.toString(), createdAt: chatDoc.createdAt, messages: messagesDecrypted };
     res.status(IStatusCode.OK).json({ chat, hasMore });
     return;
   }
