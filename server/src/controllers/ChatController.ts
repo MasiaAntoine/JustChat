@@ -6,6 +6,7 @@ import { IChat } from "../types/IChat.js";
 import { AppError } from "../utils/AppError.js";
 import { IErrorCode } from "../types/IErrorCode.js";
 import { IStatusCode } from "../types/IStatusCode.js";
+import { chatDeleted } from "../hub/hubEvent.js";
 
 const MESSAGES_PAGE_SIZE = 10;
 
@@ -57,3 +58,38 @@ export const getChatController = async (
 };
 
 export const getChat = tryCatch(getChatController);
+
+export const deleteChatController = async (
+  req: Request<{}, {}, {}, { userId: string; otherUserId: string }>,
+  res: Response
+): Promise<void> => {
+  const { userId, otherUserId } = req.query;
+  if (!userId || !otherUserId)
+    throw new AppError(IErrorCode.UNEXCPECTED_ERROR, "userId and otherUserId required", IStatusCode.BAD_REQUEST);
+
+  const getUsersAsync = [userId, otherUserId].map((id) => User.findOne({ _id: id }).select("+conversationIds"));
+  const users = await Promise.all(getUsersAsync);
+  const [user1, user2] = users;
+
+  if (!user1 || !user2)
+    throw new AppError(IErrorCode.USERS_NOT_FOUND, "Cannot get users", IStatusCode.NOT_FOUND);
+
+  const conversationId = user1.conversationIds.filter((id: string) => user2.conversationIds.includes(id))[0];
+  if (!conversationId) {
+    res.status(IStatusCode.OK).json({ deleted: true });
+    return;
+  }
+
+  const chatDoc = await Chat.findById(conversationId);
+  if (!chatDoc) {
+    res.status(IStatusCode.OK).json({ deleted: true });
+    return;
+  }
+
+  chatDoc.messages = [];
+  await chatDoc.save();
+  chatDeleted(userId, otherUserId);
+  res.status(IStatusCode.OK).json({ deleted: true });
+};
+
+export const deleteChat = tryCatch(deleteChatController);

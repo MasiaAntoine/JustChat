@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { IDialogs } from "../../types/Dialogs/IDialogs";
 import DeleteDialog from "../DeleteDialog/DeleteDialog";
+import DeleteChatDialog from "../DeleteChatDialog/DeleteChatDialog";
 import { useSelector } from "react-redux";
 import { IRootState } from "../../redux/store";
 import ModifyDialog from "../ModifyDialog/ModifyDialog";
@@ -17,6 +18,10 @@ export const useDialogs = () => {
       {
         show: isOpen === IDialogs.MODIFY,
         component: <ModifyDialog />,
+      },
+      {
+        show: isOpen === IDialogs.DELETE_CHAT,
+        component: <DeleteChatDialog />,
       },
     ],
     [isOpen]

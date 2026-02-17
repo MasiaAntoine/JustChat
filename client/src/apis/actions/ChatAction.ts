@@ -31,5 +31,20 @@ const getChatAction = async ({ queryKey }: { queryKey: string[] }): Promise<ICha
   return response.data.chat;
 };
 
+const deleteChatAction = async ({
+  userId,
+  otherUserId,
+}: {
+  userId: string;
+  otherUserId: string;
+}): Promise<{ deleted: boolean }> => {
+  const response = await axios.delete(
+    `${LOCAL_ROUTE}/chat?userId=${encodeURIComponent(userId)}&otherUserId=${encodeURIComponent(otherUserId)}`,
+    isAuthenticate()
+  );
+  return response.data;
+};
+
 export const getChatPage = tryCatch(getChatPageAction);
 export const getChat = tryCatch(getChatAction);
+export const deleteChat = tryCatch(deleteChatAction);
