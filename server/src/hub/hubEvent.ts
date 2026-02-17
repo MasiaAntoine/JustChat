@@ -25,15 +25,16 @@ export const removeClientBySocket = async (ws: WebSocket): Promise<void> => {
  * This function is used to handle user connection
  * @param {WebSocket} ws - Websocket event
  * @param {IUser} user - Concerned user
- * @returns {void}
+ * @returns {Promise<void>}
  */
-export const userIsConnected = (ws: WebSocket, user: IUser): void => {
+export const userIsConnected = async (ws: WebSocket, user: IUser): Promise<void> => {
   const { _id } = user;
   if (!_id) return;
   // Replace existing entry if user reconnects (e.g. after refresh)
   clients = clients.filter((item) => item.userId !== _id);
   clients.push({ userId: _id, client: ws });
-  const event = { type: ISocketEvent.USER_IS_CONNECTED, data: user };
+  await User.findOneAndUpdate({ _id }, { online: true });
+  const event = { type: ISocketEvent.USER_IS_CONNECTED, data: { ...user, online: true } };
   sendToClient(event, "ALL");
 };
 

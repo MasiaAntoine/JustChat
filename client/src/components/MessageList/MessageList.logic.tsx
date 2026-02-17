@@ -13,6 +13,7 @@ import { useChatCache } from "../../hooks/useQueryCache/useChatCache";
 import { setChatContainerRef } from "../../redux/reducers/chatReducer";
 import { useContactCache } from "../../hooks/useQueryCache/useContactCache";
 import { ChatPageResponse } from "../../apis/actions/ChatAction";
+import { IUser } from "../../apis/IUser";
 
 const SCROLL_LOAD_MORE_THRESHOLD = 80;
 
@@ -49,6 +50,19 @@ export const useMessageList = () => {
       case ISocketEvent.SEND_MESSAGE:
         onReceiveMessage(dataEvent as Omit<IMessage, "conversationId">);
         break;
+      case ISocketEvent.USER_IS_CONNECTED:
+      case ISocketEvent.USER_IS_DISCONNECTED: {
+        const userEvent = dataEvent as IUser;
+        if (userEvent._id === params.id) {
+          queryClient.setQueryData(
+            [QUERY_KEY.CONTACT, params.id],
+            (old: { user: IUserDTO } | undefined) =>
+              old ? { user: { ...old.user, online: type === ISocketEvent.USER_IS_CONNECTED } } : old
+          );
+        }
+        queryClient.invalidateQueries([QUERY_KEY.USERS, user._id]);
+        break;
+      }
       default:
         break;
     }
