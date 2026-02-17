@@ -2,6 +2,7 @@ import Message from "../Message/Message";
 import { useMessageList } from "./MessageList.logic";
 import "./MessageList.css";
 import ScrollBar from "../Scrollbar/ScrollBar";
+import Loader from "../Loader/Loader";
 
 const MessageList = () => {
   const logic = useMessageList();
@@ -9,6 +10,11 @@ const MessageList = () => {
   return (
     <div ref={logic.chatContainerRef} className="messageList-container">
       <ScrollBar />
+      {logic.queryChat?.isFetchingMore && (
+        <div className="messageList-load-older">
+          <Loader />
+        </div>
+      )}
       {logic.chat.messages &&
         logic.chat.messages.map((item, i) => {
           const isSameSender = logic.isSameSender(i);

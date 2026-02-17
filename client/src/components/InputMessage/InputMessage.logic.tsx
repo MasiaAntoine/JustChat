@@ -1,17 +1,17 @@
 import { useParams } from "react-router-dom";
-import { useQueryCache } from "../../hooks/useQueryCache/useQueryCache";
+import { useQueryClient } from "react-query";
 import { IRootState } from "../../redux/store";
 import { useSelector } from "react-redux";
 import { ISocketEvent } from "../../apis/ISocketEvent";
 import { QUERY_KEY } from "../../hooks/useQueryCache/queryKey";
 import { useChatCache } from "../../hooks/useQueryCache/useChatCache";
+import { ChatPageResponse } from "../../apis/actions/ChatAction";
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { reducer, initialState, IAction } from "./InputMessage.reducer";
 
 export const useInputMessage = () => {
-  // Services
   const params = useParams();
-  const { mutate } = useQueryCache();
+  const queryClient = useQueryClient();
   const { emitEvent } = useSelector((s: IRootState) => s.socket);
   const userId = useSelector((s: IRootState) => s.user._id);
   const { queryChat } = useChatCache();
@@ -73,8 +73,16 @@ export const useInputMessage = () => {
       receiver: params.id,
       sender: userId,
     };
-    const newCache = { ...queryChat.data, messages: [...queryChat.data.messages, message] };
-    mutate({ data: newCache, queryKey: [QUERY_KEY.CHAT, userId, params.id] });
+    const key = [QUERY_KEY.CHAT, userId, params.id];
+    queryClient.setQueryData(key, (old: { pages: ChatPageResponse[]; pageParams: unknown[] } | undefined) => {
+      if (!old?.pages?.length) return old;
+      const pages = [...old.pages];
+      pages[0] = {
+        ...pages[0],
+        chat: { ...pages[0].chat, messages: [...pages[0].chat.messages, message] },
+      };
+      return { ...old, pages };
+    });
     emitEvent(ISocketEvent.SEND_MESSAGE, message);
     scrollToBottom();
     dispatch({ type: IAction.SET_MESSAGE, payload: { ...state, message: "" } });

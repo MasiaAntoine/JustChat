@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useRef } from "react";
-import { useQueryCache } from "../../hooks/useQueryCache/useQueryCache";
+import { useEffect, useRef, useCallback } from "react";
+import { useQueryClient } from "react-query";
 import { useDispatch, useSelector } from "react-redux";
 import { IAppDispatch, IRootState } from "../../redux/store";
 import { parseSocketEvent } from "../../utils/parseSocketEvent";
@@ -12,11 +12,13 @@ import { IUserDTO } from "../../apis/IUserDTO";
 import { useChatCache } from "../../hooks/useQueryCache/useChatCache";
 import { setChatContainerRef } from "../../redux/reducers/chatReducer";
 import { useContactCache } from "../../hooks/useQueryCache/useContactCache";
+import { ChatPageResponse } from "../../apis/actions/ChatAction";
+
+const SCROLL_LOAD_MORE_THRESHOLD = 80;
 
 export const useMessageList = () => {
-  // Services
   const params = useParams();
-  const { mutate } = useQueryCache();
+  const queryClient = useQueryClient();
   const { webSocket } = useSelector((s: IRootState) => s.socket);
   const user = useSelector((s: IRootState) => s.user);
   const { scroll } = useSelector((s: IRootState) => s.chat);
@@ -25,6 +27,9 @@ export const useMessageList = () => {
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const dispatchCtx = useDispatch<IAppDispatch>();
+  const scrollHeightBeforeFetch = useRef(0);
+  const scrollTopBeforeFetch = useRef(0);
+  const isLoadingOlder = useRef(false);
 
   useEffect(() => {
     dispatchCtx(setChatContainerRef(chatContainerRef.current));
@@ -38,11 +43,6 @@ export const useMessageList = () => {
     };
   }, [webSocket, queryChat.data]);
 
-  /**
-   * This function group all socket events
-   * @param {unknown} event - Event type sended from server side
-   * @returns {void}
-   */
   const onEvent = (event: unknown): void => {
     const { type, data: dataEvent } = parseSocketEvent(event);
     switch (type) {
@@ -54,15 +54,19 @@ export const useMessageList = () => {
     }
   };
 
-  /**
-   * This function is used to notify that we received a new message
-   * @param {Omit<IMessage, "conversationId">} message - Message informations
-   * @returns {void}
-   */
   const onReceiveMessage = (message: Omit<IMessage, "conversationId">): void => {
     if (message.sender !== params.id) return;
-    const newCache = { ...queryChat.data, messages: [...queryChat.data.messages, message] };
-    mutate({ data: newCache, queryKey: [QUERY_KEY.CHAT, user._id, params.id] });
+    const key = [QUERY_KEY.CHAT, user._id, params.id];
+    queryClient.setQueryData(key, (old: { pages: ChatPageResponse[]; pageParams: unknown[] } | undefined) => {
+      if (!old?.pages?.length) return old;
+      const pages = [...old.pages];
+      const mostRecentPageIdx = 0;
+      pages[mostRecentPageIdx] = {
+        ...pages[mostRecentPageIdx],
+        chat: { ...pages[mostRecentPageIdx].chat, messages: [...pages[mostRecentPageIdx].chat.messages, message] },
+      };
+      return { ...old, pages };
+    });
     scroll.scrollToBottom();
   };
 
@@ -93,8 +97,39 @@ export const useMessageList = () => {
     }
   };
 
+  const handleScroll = useCallback(() => {
+    const el = chatContainerRef.current;
+    if (!el || !queryChat.hasMoreOlder || queryChat.isFetchingMore || isLoadingOlder.current) return;
+    if (el.scrollTop <= SCROLL_LOAD_MORE_THRESHOLD) {
+      isLoadingOlder.current = true;
+      scrollHeightBeforeFetch.current = el.scrollHeight;
+      scrollTopBeforeFetch.current = el.scrollTop;
+      queryChat.fetchMoreOlder();
+    }
+  }, [queryChat.hasMoreOlder, queryChat.isFetchingMore, queryChat.fetchMoreOlder]);
+
+  useEffect(() => {
+    const el = chatContainerRef.current;
+    if (!el || !isLoadingOlder.current) return;
+    if (!queryChat.isFetchingMore) {
+      requestAnimationFrame(() => {
+        const newHeight = el.scrollHeight;
+        el.scrollTop = newHeight - scrollHeightBeforeFetch.current + scrollTopBeforeFetch.current;
+        isLoadingOlder.current = false;
+      });
+    }
+  }, [queryChat.data.messages.length, queryChat.isFetchingMore]);
+
+  useEffect(() => {
+    const el = chatContainerRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
+
   return {
     chat: queryChat.data,
+    queryChat,
     isSameSender,
     getInfos,
     chatContainerRef,
