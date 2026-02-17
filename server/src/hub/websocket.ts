@@ -3,7 +3,14 @@ import { server } from "../app.js";
 import { parseBuffer } from "../utils/parseBuffer.js";
 import { ISocketEvent } from "../types/ISocketEvent.js";
 import { IUser } from "../types/IUser.js";
-import { sendMessage, userDelete, userIsConnected, userIsDisconnected, userUpdate } from "./hubEvent.js";
+import {
+  sendMessage,
+  userDelete,
+  userIsConnected,
+  userIsDisconnected,
+  userUpdate,
+  removeClientBySocket,
+} from "./hubEvent.js";
 import { IMessage } from "../types/IMessage.js";
 
 export const initializeWebSocket = () => {
@@ -11,8 +18,18 @@ export const initializeWebSocket = () => {
 
   wss.on("connection", (ws) => {
     ws.on("message", async (buffer, isBinary) => {
-      const { type, evt } = parseBuffer(buffer);
-      onEvent(ws, type, evt);
+      try {
+        const { type, evt } = parseBuffer(buffer);
+        onEvent(ws, type, evt);
+      } catch (err) {
+        console.error("[WebSocket] Invalid message:", err);
+      }
+    });
+    ws.on("close", () => {
+      removeClientBySocket(ws);
+    });
+    ws.on("error", () => {
+      removeClientBySocket(ws);
     });
   });
 };

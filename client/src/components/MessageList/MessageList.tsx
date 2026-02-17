@@ -13,7 +13,16 @@ const MessageList = () => {
         logic.chat.messages.map((item, i) => {
           const isSameSender = logic.isSameSender(i);
           const infoToDisplay = logic.getInfos(item);
-          return <Message key={i} {...item} isSameSender={isSameSender} infoToDisplay={infoToDisplay} />;
+          const isMe = item.sender === logic.currentUserId;
+          return (
+            <Message
+              key={i}
+              {...item}
+              isSameSender={isSameSender}
+              infoToDisplay={infoToDisplay}
+              isMe={isMe}
+            />
+          );
         })}
     </div>
   );

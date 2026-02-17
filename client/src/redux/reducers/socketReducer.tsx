@@ -14,7 +14,7 @@ const socketSlice = createSlice({
   name: "socket",
   initialState: initialState,
   reducers: {
-    setSocket(state, action: PayloadAction<WebSocket>) {
+    setSocket(state, action: PayloadAction<WebSocket | undefined>) {
       state.webSocket = action.payload;
     },
     setEmitEvent(state, action: PayloadAction<(type: ISocketEvent, payload: unknown) => void>) {

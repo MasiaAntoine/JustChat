@@ -37,9 +37,9 @@ export const useUserList = (props: IUserList) => {
   }, [isFetching, hasNextPage]);
 
   useEffect(() => {
-    if (!webSocket) return;
+    if (!webSocket || !user._id) return;
     setUserIsConnected();
-  }, [webSocket]);
+  }, [webSocket, user._id]);
 
   useEffect(() => {
     if (!webSocket) return;
@@ -174,7 +174,13 @@ export const useUserList = (props: IUserList) => {
 
       const updatedPage = oldData.pages[userIdx].users.map((u) =>
         u._id === updatedUser._id
-          ? { ...u, online: isConnected, name: updatedUser.name, email: updatedUser.email, pictureId: updatedUser.pictureId }
+          ? {
+              ...u,
+              online: isConnected,
+              ...(updatedUser.name !== undefined && { name: updatedUser.name }),
+              ...(updatedUser.email !== undefined && { email: updatedUser.email }),
+              ...(updatedUser.pictureId !== undefined && { pictureId: updatedUser.pictureId }),
+            }
           : u
       );
       oldData.pages[userIdx] = { users: updatedPage, total: oldData.pages[userIdx].total };

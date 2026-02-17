@@ -8,6 +8,7 @@ import { setAuth } from "../../../redux/reducers/authReducer";
 import { IError } from "../../../apis/IError";
 import { setUser } from "../../../redux/reducers/userReducer";
 import { IUserDTO } from "../../../apis/IUserDTO";
+import { SESSION_STORAGE_USER } from "../../../const/const";
 import { useUserCache } from "../../../hooks/useQueryCache/useUserCache";
 
 export const useRegister = () => {
@@ -119,6 +120,7 @@ export const useRegister = () => {
    */
   const onSuccess = useCallback((data: { token: string; user: IUserDTO }): void => {
     const { token, user } = data;
+    sessionStorage.setItem(SESSION_STORAGE_USER, JSON.stringify(user));
     dispatchCtx(setAuth({ isAuthenticated: true, token }));
     dispatchCtx(setUser(user));
     navigate("/home");

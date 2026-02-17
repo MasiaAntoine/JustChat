@@ -14,7 +14,7 @@ function App() {
 
   return (
     <div className="App">
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Navbar />
         <Dialogs />
         <Routes>

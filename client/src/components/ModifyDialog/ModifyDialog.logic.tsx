@@ -5,6 +5,7 @@ import { IAppDispatch, IRootState } from "../../redux/store";
 import { useUserCache } from "../../hooks/useQueryCache/useUserCache";
 import { setDialog } from "../../redux/reducers/dialogReducer";
 import { setUser } from "../../redux/reducers/userReducer";
+import { SESSION_STORAGE_USER } from "../../const/const";
 import { ISocketEvent } from "../../apis/ISocketEvent";
 import { IError } from "../../apis/IError";
 import { IDialogs } from "../../types/Dialogs/IDialogs";
@@ -91,6 +92,7 @@ export const useModifyDialog = () => {
   const onSuccess = (): void => {
     dispatchCtx(setDialog({ isOpen: undefined, data: undefined }));
     const newUser = { ...user, name: state.name, email: state.email, pictureId: avatarRef.current };
+    sessionStorage.setItem(SESSION_STORAGE_USER, JSON.stringify(newUser));
     dispatchCtx(setUser(newUser));
     emitEvent(ISocketEvent.USER_UDPATE, newUser);
   };

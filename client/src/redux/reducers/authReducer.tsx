@@ -1,11 +1,20 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { SESSION_STORAGE_TOKEN } from "../../const/const";
+
+const getStoredToken = (): string | undefined => {
+  if (typeof sessionStorage === "undefined") return undefined;
+  const token = sessionStorage.getItem(SESSION_STORAGE_TOKEN);
+  return token ?? undefined;
+};
+
+const storedToken = getStoredToken();
 
 const initialState: {
   isAuthenticated: boolean;
   token: string | undefined;
 } = {
-  isAuthenticated: false,
-  token: undefined,
+  isAuthenticated: !!storedToken,
+  token: storedToken,
 };
 
 const authSlice = createSlice({

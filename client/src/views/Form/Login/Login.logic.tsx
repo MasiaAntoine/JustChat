@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { setAuth } from "../../../redux/reducers/authReducer";
 import { IError } from "../../../apis/IError";
 import { setUser } from "../../../redux/reducers/userReducer";
+import { SESSION_STORAGE_USER } from "../../../const/const";
 import { IUserDTO } from "../../../apis/IUserDTO";
 import { useUserCache } from "../../../hooks/useQueryCache/useUserCache";
 
@@ -102,6 +103,7 @@ export const useLogin = () => {
    */
   const onSuccess = useCallback((res: { token: string; user: IUserDTO }): void => {
     const { token, user } = res;
+    sessionStorage.setItem(SESSION_STORAGE_USER, JSON.stringify(user));
     dispatchCtx(setAuth({ isAuthenticated: true, token }));
     dispatchCtx(setUser(user));
     navigate("/home");

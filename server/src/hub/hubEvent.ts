@@ -8,6 +8,20 @@ import WebSocket from "ws";
 let clients: { userId: string; client: WebSocket }[] = [];
 
 /**
+ * Remove a client from the list when their socket closes (disconnect, refresh, etc.)
+ * Notifies other clients and updates DB so they see the user as offline.
+ */
+export const removeClientBySocket = async (ws: WebSocket): Promise<void> => {
+  const entry = clients.find((item) => item.client === ws);
+  if (entry) {
+    clients = clients.filter((item) => item.client !== ws);
+    const userDoc = await User.findById(entry.userId).select("name email pictureId _id").lean();
+    const userPayload = userDoc ? { ...userDoc, online: false } : ({ _id: entry.userId } as IUser);
+    await userIsDisconnected(userPayload as IUser);
+  }
+};
+
+/**
  * This function is used to handle user connection
  * @param {WebSocket} ws - Websocket event
  * @param {IUser} user - Concerned user
@@ -15,10 +29,10 @@ let clients: { userId: string; client: WebSocket }[] = [];
  */
 export const userIsConnected = (ws: WebSocket, user: IUser): void => {
   const { _id } = user;
-  const isHere = clients.find((item) => item.userId === _id);
-  if (isHere) return;
-  const client = { userId: _id, client: ws };
-  clients.push(client);
+  if (!_id) return;
+  // Replace existing entry if user reconnects (e.g. after refresh)
+  clients = clients.filter((item) => item.userId !== _id);
+  clients.push({ userId: _id, client: ws });
   const event = { type: ISocketEvent.USER_IS_CONNECTED, data: user };
   sendToClient(event, "ALL");
 };

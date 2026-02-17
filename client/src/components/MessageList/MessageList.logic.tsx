@@ -98,5 +98,6 @@ export const useMessageList = () => {
     isSameSender,
     getInfos,
     chatContainerRef,
+    currentUserId: user._id,
   };
 };
